@@ -176,6 +176,7 @@ async def add_bots_after_start():
         subprocess.Popen(["python", "sigmoidMax.py"])  # Replace "bot.py" with the path to your bot file
         subprocess.Popen(["python", "MaxGold.py"])  # Replace "bot.py" with the path to your bot file
         subprocess.Popen(["python", "counter.py"])  # Replace "bot.py" with the path to your bot file
+        subprocess.Popen(["python", "print_bot.py"])  # Replace "bot.py" with the path to your bot file
 
         bots_added = True  # Ensure bots are added only once
 
