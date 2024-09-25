@@ -74,7 +74,6 @@ def OptimalGoldBot(agent_id: str, states: dict, auctions: dict, prev_auctions: d
     return bids
 
 if __name__ == "__main__":
-
     host = "localhost"
     agent_name = "OptimalGoldBot_{}".format(random.randint(1, 1000))
     player_id = "OptimalGoldPlayer"
