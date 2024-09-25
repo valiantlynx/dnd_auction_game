@@ -6,7 +6,7 @@ from dnd_auction_game import AuctionGameClient
 
 
 
-def printAuction
+
 
 def save_and_spend_later_bid(agent_id: str, states: dict, auctions: dict, prev_auctions: dict):
     agent_state = states[agent_id]
