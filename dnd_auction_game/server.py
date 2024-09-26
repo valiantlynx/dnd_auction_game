@@ -138,7 +138,6 @@ async def websocket_endpoint_runner(websocket: WebSocket, play_token: str):
     except:
         print("game not started due to error.")
 
-
 # Function to add bots only once
 async def add_bots_after_start():
     global bots_added
@@ -146,19 +145,19 @@ async def add_bots_after_start():
         await asyncio.sleep(2)  # Delay to ensure server is fully up
         print("Starting bots...")
 
-        subprocess.Popen(["python", "randoMax.py"])
-        subprocess.Popen(["python", "saveMax.py"])  # Replace "bot.py" with the path to your bot file
-        subprocess.Popen(["python", "conservativeMax.py"])  # Replace "bot.py" with the path to your bot file
-        subprocess.Popen(["python", "invincible.py"])  # Replace "bot.py" with the path to your bot file
-        subprocess.Popen(["python", "curve.py"])  # Replace "bot.py" with the path to your bot file
-        subprocess.Popen(["python", "sigmoidMax.py"])  # Replace "bot.py" with the path to your bot file
-        subprocess.Popen(["python", "MaxGold.py"])  # Replace "bot.py" with the path to your bot file
-        subprocess.Popen(["python", "counter.py"])  # Replace "bot.py" with the path to your bot file
-        subprocess.Popen(["python", "print_bot.py"])  # Replace "bot.py" with the path to your bot file
+        # Get the path of the bots directory
+        bots_directory = os.path.join(os.path.dirname(__file__), '../bots')
+        
+        # Iterate over each file in the bots directory
+        for file_name in os.listdir(bots_directory):
+            # Check if the file is a Python script and not a directory
+            if file_name.endswith('.py') and not file_name.startswith('__'):
+                bot_path = os.path.join(bots_directory, file_name)
+                # Start the bot script using the correct Python interpreter
+                subprocess.Popen(["python", bot_path])
 
         bots_added = True  # Ensure bots are added only once
-
-
+        
 @app.get("/")
 async def get():
     await asyncio.create_task(add_bots_after_start())  # Add bots after startup
@@ -190,3 +189,9 @@ async def get():
         all_players.append({'grade': grade, 'name': name, 'gold': gold, 'points': points})
 
     return HTMLResponse(generate_leadboard(all_players, auction_house.round_counter, auction_house.is_done))
+
+
+# Main function to run the app
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("dnd_auction_game.server:app", host="0.0.0.0", port=8001, reload=True)
