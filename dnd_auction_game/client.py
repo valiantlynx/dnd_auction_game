@@ -26,7 +26,7 @@ class AuctionGameClient:
             raise ValueError("Agent name is too long: '{}'".format(self.agent_name))
         
         if self.host.lower() == "localhost" or self.host == "127.0.0.1":
-            self.agent_id = "local_rand_id_{}".format(random.randint(100, 1000000))
+            self.agent_id = self.agent_name # "local_rand_id_{}".format(random.randint(100, 1000000))
         else:
             self.agent_id = machineid.hashed_id('auction-game')
         
