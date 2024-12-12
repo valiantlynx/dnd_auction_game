@@ -3,7 +3,6 @@ import os
 from math import exp
 from dnd_auction_game import AuctionGameClient
 
-
 ############################################################################################
 #
 # Sigmoid Interest Rate Bot
@@ -67,14 +66,14 @@ def InterestMax(agent_id: str, states: dict, auctions: dict, prev_auctions: dict
         if bid <= current_gold:
             bids[auction_id] = bid+1
             current_gold -= bid
-
+    
     return bids
 
 
 if __name__ == "__main__":
 
     host = "localhost"
-    agent_name = "InterestMax_{}".format(random.randint(1, 1000))
+    agent_name = "Stonk_{}".format(random.randint(1, 1000))
     player_id = "InterestBasedPlayer"
     port = 8001
 

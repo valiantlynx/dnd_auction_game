@@ -1,6 +1,10 @@
-import random
+import os
 from math import exp
 from dnd_auction_game import AuctionGameClient
+import plotly.graph_objects as go
+import random
+import threading
+import time
 
 # Sigmoid function for calculating interest rate
 def sigmoid(x):
@@ -39,13 +43,13 @@ def risk_reward_ratio(bid_amount, estimated_value, competition):
     return reward / risk if risk > 0 else 0
 
 # Combined Bot Function with strategic bidding and counter tactics
-def SmartStrategistBot(agent_id: str, states: dict, auctions: dict, prev_auctions: dict):
+def CombinedStrategistCounterBot(agent_id: str, states: dict, auctions: dict, prev_auctions: dict):
     agent_state = states[agent_id]
     current_gold = agent_state["gold"]
 
     # Set desired capital to maintain, dynamically adjusted based on game progress
     rounds_left = len(auctions)
-    desired_capital = max(2000, current_gold // 2) if rounds_left < 5 else 4000  # Aggressive capital retention
+    desired_capital = max(2000, current_gold // 2) if rounds_left < 5 else 5000  # Aggressive capital retention
     gold_to_spend = max(0, current_gold - desired_capital)
 
     # Prepare to bid on auctions
@@ -58,7 +62,7 @@ def SmartStrategistBot(agent_id: str, states: dict, auctions: dict, prev_auction
         auction_estimates[auction_id] = estimated_value
 
     # Estimate OptimalGoldBot's bids for counter strategy
-    optimal_bot_gold_to_spend = 2700  # OptimalGoldBot spends up to 3000 gold
+    optimal_bot_gold_to_spend = 3000  # OptimalGoldBot spends up to 3000 gold
     optimal_bot_bids = estimate_optimal_gold_bot_bid(auction_estimates, optimal_bot_gold_to_spend)
 
     # Assess competition based on previous round's bids
@@ -96,22 +100,26 @@ def SmartStrategistBot(agent_id: str, states: dict, auctions: dict, prev_auction
             gold_to_spend -= bid_amount
     return bids
 
-# Main function to run the auction game client
-if __name__ == "__main__":
-    host = "88.90.236.106"
-    agent_name = "Stonks_3000".format(random.randint(1, 1000))
-    player_id = "Stonks_3000"
-    port = 8095
-
+# Synchronous run function
+def run_auction_bot(host, agent_name, player_id, port):
     game = AuctionGameClient(
         host=host,
         agent_name=agent_name,
         player_id=player_id,
         port=port
     )
-    try:
-        game.run(SmartStrategistBot)
-    except KeyboardInterrupt:
-        print("<interrupt - shutting down>")
+    game.run(CombinedStrategistCounterBot)  # Use a synchronous call
 
-    print("<game is done>")
+# Function to handle threading
+def run_bot_thread(host, agent_name, player_id, port):
+    run_auction_bot(host, agent_name, player_id, port)
+
+if __name__ == "__main__":
+    host = "localhost"
+    agent_name = "Stonks_3000_{}".format(random.randint(1, 1000))
+    player_id = "Stonks_3000"
+    port = 8001
+
+    # Start the auction bot in a separate thread
+    auction_bot_thread = threading.Thread(target=run_bot_thread, args=(host, agent_name, player_id, port))
+    auction_bot_thread.start()

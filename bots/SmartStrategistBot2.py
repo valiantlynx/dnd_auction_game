@@ -200,8 +200,8 @@ def run_auction_bot(host, agent_name, player_id, port):
 
 if __name__ == "__main__":
     host = "localhost"
-    agent_name = "SmartStrategistBot2_{}".format(random.randint(1, 1000))
-    player_id = "SmartStrategistBot2"
+    agent_name = "Stonks_3000".format(random.randint(1, 1000))
+    player_id = "Stonks_3000"
     port = 8001
 
     # Start the auction bot in a separate thread

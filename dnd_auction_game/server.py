@@ -1,12 +1,6 @@
-import random
-import math
 import os
 import asyncio
-from typing import List, Dict, Union
-from collections import defaultdict
-import json
 from contextlib import asynccontextmanager
-import subprocess  # To run the bot file as a separate process
 
 from fastapi.responses import HTMLResponse
 from fastapi import (
@@ -138,29 +132,8 @@ async def websocket_endpoint_runner(websocket: WebSocket, play_token: str):
     except:
         print("game not started due to error.")
 
-# Function to add bots only once
-async def add_bots_after_start():
-    global bots_added
-    if not bots_added:
-        await asyncio.sleep(2)  # Delay to ensure server is fully up
-        print("Starting bots...")
-
-        # Get the path of the bots directory
-        bots_directory = os.path.join(os.path.dirname(__file__), '../bots')
-        
-        # Iterate over each file in the bots directory
-        for file_name in os.listdir(bots_directory):
-            # Check if the file is a Python script and not a directory
-            if file_name.endswith('.py') and not file_name.startswith('__'):
-                bot_path = os.path.join(bots_directory, file_name)
-                # Start the bot script using the correct Python interpreter
-                subprocess.Popen(["python", bot_path])
-
-        bots_added = True  # Ensure bots are added only once
-        
 @app.get("/")
 async def get():
-    await asyncio.create_task(add_bots_after_start())  # Add bots after startup
     leadboard = []
     for a_id, info in auction_house.agents.items():
         name = auction_house.names[a_id]
