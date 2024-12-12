@@ -1,58 +1,43 @@
+import os
 import random
-import os 
-
 from dnd_auction_game import AuctionGameClient
 
+class RandomWalkAgent:
+    def __init__(self, max_move: int = 10):
+        self.max_move = max_move
+        self.min_bid = 3
+        self.current_bid = random.randint(1, 100)
+        self.last_bid_auction_id = None
 
-############################################################################################
-#
-# random_all_in
-#   Picks a single auction and bid a random fraction of the agents gold.
-#   Also make sure we never bid more than the max of all the other agents.
-#
-############################################################################################
-    
+    def random_walk(self, agent_id: str, current_round: int, states: dict, auctions: dict, prev_auctions: dict, bank_state: dict):
+        agent_state = states[agent_id]
+        current_gold = agent_state["gold"]
 
-def random_single_bid(agent_id:str, states:dict, auctions:dict, prev_auctions:dict):
-    agent_state = states[agent_id]
-    
-    # get the gold amount of the wealthiest agent (that is not ourself)
-    max_gold = 1
-    for a_id, other_agent in states.items():
-        if a_id != agent_id:
-            if other_agent["gold"] < max_gold:
-                max_gold = other_agent["gold"]
-                    
-        
-    bids = {}
-    if agent_state["gold"] > 0:           
-        # pick a random auction
-        actions = list(auctions.keys())     
-        target_auction_id = random.sample(actions, k=1)[0] # sample returns a list
-        
-        bid_amount = int(agent_state["gold"] * random.uniform(0.5, 0.9))        
-        bid_amount = min(bid_amount, max_gold)  # never more than the other agents have
-        
-        bids[target_auction_id] = bid_amount
+        # Adjust bid amount based on previous results
+        if self.last_bid_auction_id and self.last_bid_auction_id in prev_auctions:
+            winning_bid = prev_auctions[self.last_bid_auction_id]["bids"][0]
+            if winning_bid["a_id"] == agent_id:
+                self.current_bid = max(self.current_bid - random.randint(1, self.max_move), self.min_bid)
+            else:
+                self.current_bid = min(self.current_bid + random.randint(1, self.max_move), current_gold)
 
-    return bids
+        bids = {}
+        if current_gold >= self.current_bid:
+            auction_id = random.choice(list(auctions.keys()))
+            bids[auction_id] = self.current_bid
+            self.last_bid_auction_id = auction_id
 
+        return bids
 
-
-if __name__ == "__main__":    
-
+if __name__ == "__main__":
     host = "localhost"
     agent_name = "{}_{}".format(os.path.basename(__file__), random.randint(1, 1000))
     player_id = "id_of_human_player"
-    port = 8001
+    port = 8000
 
-    game = AuctionGameClient(host=host,
-                             agent_name=agent_name,
-                             player_id=player_id,
-                             port=port)
+    game = AuctionGameClient(host=host, agent_name=agent_name, player_id=player_id, port=port)
+    agent = RandomWalkAgent(max_move=10)
     try:
-        game.run(random_single_bid)
+        game.run(agent.random_walk)
     except KeyboardInterrupt:
         print("<interrupt - shutting down>")
-
-    print("<game is done>")

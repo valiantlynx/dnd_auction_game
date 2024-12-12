@@ -1,55 +1,43 @@
 import os
 import random
+from dnd_auction_game import AuctionGameClient
 
-from dnd_auction_game.client import AuctionGameClient  # Current AuctionGameClient import path
+class RandomWalkAgent:
+    def __init__(self, max_move: int = 10):
+        self.max_move = max_move
+        self.min_bid = 3
+        self.current_bid = random.randint(1, 100)
+        self.last_bid_auction_id = None
 
-def save_and_spend_later_bid(agent_id: str, states: dict, auctions: dict, prev_auctions: dict):
-    agent_state = states[agent_id]
-    current_gold = agent_state["gold"]
-    total_rounds = 10  # Default total rounds (adjust if game setup changes)
-    current_round = states.get("round", 1)  # Extract current round
-    num_auctions = len(auctions)
+    def random_walk(self, agent_id: str, current_round: int, states: dict, auctions: dict, prev_auctions: dict, bank_state: dict):
+        agent_state = states[agent_id]
+        current_gold = agent_state["gold"]
 
-    # Early phase: Spend only 1% of current gold on each auction
-    if current_round <= total_rounds // 2:
-        spend_percentage = 0.01  # Spend 1% of gold
-        total_gold_to_spend = current_gold * spend_percentage
-    else:
-        # Later phase: Spend all remaining gold evenly across auctions
-        total_gold_to_spend = current_gold
+        # Adjust bid amount based on previous results
+        if self.last_bid_auction_id and self.last_bid_auction_id in prev_auctions:
+            winning_bid = prev_auctions[self.last_bid_auction_id]["bids"][0]
+            if winning_bid["a_id"] == agent_id:
+                self.current_bid = max(self.current_bid - random.randint(1, self.max_move), self.min_bid)
+            else:
+                self.current_bid = min(self.current_bid + random.randint(1, self.max_move), current_gold)
 
-    gold_per_auction = total_gold_to_spend / num_auctions
+        bids = {}
+        if current_gold >= self.current_bid:
+            auction_id = random.choice(list(auctions.keys()))
+            bids[auction_id] = self.current_bid
+            self.last_bid_auction_id = auction_id
 
-    bids = {}
-    for auction_id in auctions.keys():
-        bid = max(1, int(gold_per_auction))
-        if bid <= current_gold:
-            bids[auction_id] = bid
-            current_gold -= bid
-
-    # Final round: Spend all remaining gold
-    if current_round == total_rounds and current_gold > 0:
-        remaining_gold_per_auction = current_gold // num_auctions
-        for auction_id in auctions.keys():
-            bids[auction_id] += remaining_gold_per_auction
-            current_gold -= remaining_gold_per_auction
-        if current_gold > 0:
-            last_auction = list(auctions.keys())[-1]
-            bids[last_auction] += current_gold
-
-    return bids
+        return bids
 
 if __name__ == "__main__":
     host = "localhost"
     agent_name = "{}_{}".format(os.path.basename(__file__), random.randint(1, 1000))
     player_id = "id_of_human_player"
-    port = 8001
+    port = 8000
 
-    game = AuctionGameClient(host=host,
-                             agent_name=agent_name,
-                             player_id=player_id,
-                             port=port)
+    game = AuctionGameClient(host=host, agent_name=agent_name, player_id=player_id, port=port)
+    agent = RandomWalkAgent(max_move=10)
     try:
-        game.run(save_and_spend_later_bid)
+        game.run(agent.random_walk)
     except KeyboardInterrupt:
         print("<interrupt - shutting down>")

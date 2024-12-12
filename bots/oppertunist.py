@@ -1,52 +1,35 @@
-import os
-
 from dnd_auction_game import AuctionGameClient
 
-from main import AuctionAgent
-
-
-def opportunistMax(agent_id: str, states: dict, auctions: dict, prev_auctions: dict):
-    die_sizes = [2, 3, 4, 6, 8, 10, 12, 20]
-
+def opportunist_bid(agent_id: str, current_round: int, states: dict, auctions: dict, prev_auctions: dict, bank_state: dict):
     agent_state = states[agent_id]
     current_gold = agent_state["gold"]
+    max_gold_fraction = 0.20
 
-    max_gold_fraction = 0.20  # Default conservative spending
-
-    if prev_auctions and any(agent_id in prev_bids for prev_bids in prev_auctions.values()):
-        # If the bot won an auction in the previous round, it bids more aggressively
-        max_gold_fraction = 0.40
+    if prev_auctions:
+        for auction in prev_auctions.values():
+            for bid in auction["bids"]:
+                if bid["a_id"] == agent_id:
+                    max_gold_fraction = 0.40  # Increase spending if we won last round
 
     bids = {}
-
     for auction_id, auction_info in auctions.items():
-        dice_type = auction_info.get('dice_type', 3)
-        dice_size = die_sizes[dice_type]
-        auction_value = auctions.auction_value_estimate(dice_size)
+        die = auction_info.get("die", 6)
+        num = auction_info.get("num", 1)
+        bonus = auction_info.get("bonus", 0)
+        auction_value = (1 + die) / 2 * num + bonus
 
-        bid = min(current_gold, int(auction_value / max(die_sizes) * current_gold * max_gold_fraction))
-        bid = max(1, min(bid, current_gold))
+        bid = min(current_gold, int(auction_value / 20 * current_gold * max_gold_fraction))
+        bid = max(1, bid)
 
-        if bid > current_gold:
+        if bid <= current_gold:
             bids[auction_id] = bid
             current_gold -= bid
 
     return bids
 
 if __name__ == "__main__":
-
-    host = "localhost"
-    agent_name = "OppertunistMax"
-    player_id = "Conservative"
-    port = 8001
-
-    game = AuctionGameClient(host=host,
-                             agent_name=agent_name,
-                             player_id=player_id,
-                             port=port)
+    game = AuctionGameClient(host="localhost", agent_name="Opportunist", player_id="Opportunist", port=8000)
     try:
-        game.run(opportunistMax)
+        game.run(opportunist_bid)
     except KeyboardInterrupt:
         print("<interrupt - shutting down>")
-
-    print("<game is done>")

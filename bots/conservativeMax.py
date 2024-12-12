@@ -1,68 +1,33 @@
-import random
-import os
 from dnd_auction_game import AuctionGameClient
 
-############################################################################################
-#
-# optimal_bid
-#   Bids strategically based on expected value of auctions and previous auction outcomes
-#
-############################################################################################
+def auction_value_estimate(die, num_rolls, bonus=0):
+    return (1 + die) / 2 * num_rolls + bonus
 
-def auction_value_estimate(dice_size):
-    """Estimate the expected auction value based on the dice size."""
-    # The average value for any dice is (1 + max_value) / 2
-    return (1 + dice_size) / 2
-
-
-def ConservativeMax(agent_id: str, states: dict, auctions: dict, prev_auctions: dict):
-    # You can adjust these dice sizes based on your game rules
-    die_sizes = [2, 3, 4, 6, 8, 10, 12, 20]
-
+def conservative_max(agent_id: str, current_round: int, states: dict, auctions: dict, prev_auctions: dict, bank_state: dict):
     agent_state = states[agent_id]
     current_gold = agent_state["gold"]
+    total_rounds = bank_state.get("total_rounds", 10)
+    max_gold_fraction = 0.20 if current_round <= total_rounds // 2 else 0.40
 
-    max_gold_fraction = 0.25  # The fraction of available gold to spend per round (can be tweaked)
-
-    # Calculate expected value for each auction
     bids = {}
-
     for auction_id, auction_info in auctions.items():
-        # Extract the dice size for this auction (assuming auction_info contains a dice_type index)
-        dice_type = auction_info.get('dice_type', 3)  # Default to 6-sided die (D6) if type is missing
-        dice_size = die_sizes[dice_type]  # Get the dice size from the list
+        die = auction_info.get("die", 6)
+        num = auction_info.get("num", 1)
+        bonus = auction_info.get("bonus", 0)
+        estimated_value = auction_value_estimate(die, num, bonus)
 
-        # Estimate the auction value based on the dice size
-        auction_value = auction_value_estimate(dice_size)
+        bid = int(estimated_value / 20 * current_gold * max_gold_fraction)
+        bid = min(max(1, bid), current_gold)
 
-        # Calculate how much gold to bid, scaling with the estimated auction value
-        bid = min(current_gold, int(auction_value / max(die_sizes) * current_gold * max_gold_fraction))  # Scale bid
-
-        # Ensure the bot doesn't bid zero and doesn't overbid
-        bid = max(1, min(bid, current_gold))
-
-        # Place the bid if enough gold is available
-        if bid <= current_gold:
+        if bid > 0:
             bids[auction_id] = bid
             current_gold -= bid
 
     return bids
 
-
 if __name__ == "__main__":
-
-    host = "localhost"
-    agent_name = "ConservaativeMax"
-    player_id = "Conservative"
-    port = 8001
-
-    game = AuctionGameClient(host=host,
-                             agent_name=agent_name,
-                             player_id=player_id,
-                             port=port)
+    game = AuctionGameClient(host="localhost", agent_name="ConservativeMax", player_id="ConservativeMax", port=8000)
     try:
-        game.run(ConservativeMax)
+        game.run(conservative_max)
     except KeyboardInterrupt:
         print("<interrupt - shutting down>")
-
-    print("<game is done>")
