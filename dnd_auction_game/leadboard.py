@@ -58,9 +58,9 @@ jjinja_template = """
     <table>
         <thead>
             <tr>
-                <th>Rankz</th>
+                <th>Rank</th>
                 <th>Name</th>
-                <th>Gradez</th>
+                <th>Grade</th>
                 <th>Gold</th>
                 <th>Points</th>
             </tr>
