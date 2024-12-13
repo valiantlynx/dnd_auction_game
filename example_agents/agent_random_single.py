@@ -13,14 +13,14 @@ from dnd_auction_game import AuctionGameClient
 ############################################################################################
     
 
-def random_single_bid(agent_id:str, current_round:int, states:dict, auctions:dict, prev_auctions:dict, bank_state:dict):
+def random_single_bid(agent_id:str, states:dict, auctions:dict, prev_auctions:dict):
     agent_state = states[agent_id]
     
     # get the gold amount of the wealthiest agent (that is not ourself)
     max_gold = 1
     for a_id, other_agent in states.items():
         if a_id != agent_id:
-            if other_agent["gold"] > max_gold:
+            if other_agent["gold"] < max_gold:
                 max_gold = other_agent["gold"]
                     
         
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     host = "localhost"
     agent_name = "{}_{}".format(os.path.basename(__file__), random.randint(1, 1000))
     player_id = "id_of_human_player"
-    port = 8000
+    port = 8001
 
     game = AuctionGameClient(host=host,
                              agent_name=agent_name,
